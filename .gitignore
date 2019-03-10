@@ -16,7 +16,7 @@
 *.log
 
 # media files
-*.jpg
+# *.jpg
 *.png
 *.mp4
 *.avi

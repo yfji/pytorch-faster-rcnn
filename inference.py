@@ -65,10 +65,10 @@ def im_detect(image, anchors, model):
     print(frcnn_probs.shape)
     
     cls_bboxes=[[]]
-    classes=np.argmax(frcnn_probs[:,1:], axis=1)+1
-    max_probs=np.max(frcnn_probs[:,1:], axis=1)
-#    classes=np.argmax(frcnn_probs, axis=1)
-#    max_probs=np.max(frcnn_probs, axis=1)
+#    classes=np.argmax(frcnn_probs[:,1:], axis=1)+1
+#    max_probs=np.max(frcnn_probs[:,1:], axis=1)
+    classes=np.argmax(frcnn_probs, axis=1)
+    max_probs=np.max(frcnn_probs, axis=1)
     
 #    print(classes)
 
@@ -163,8 +163,8 @@ if __name__=='__main__':
     
     print(anchors.shape)
 
-    img_files=['img00337.jpg','img00832.jpg','img00995.jpg','img01879.jpg','road.jpg']
-    
+#    img_files=['img00337.jpg','img00832.jpg','img00995.jpg','img01879.jpg','road.jpg']
+    img_files=['road.jpg']
     model_path='./ckpt/model_660000.pkl'
     model=FasterRCNN(im_width, im_height, pretrained=False)
     model.load_weights(model_path=model_path)
@@ -177,8 +177,9 @@ if __name__=='__main__':
       
       cls_bboxes, xyscale, proposals=im_detect(image, anchors, model)
   
-      draw_boxes(canvas, cls_bboxes, xyscale)
-#      draw_proposals(canvas, proposals, xyscale)
+#      draw_boxes(canvas, cls_bboxes, xyscale)
+      draw_proposals(canvas, proposals, xyscale)
       cv2.imshow('detect', canvas)
+      cv2.imwrite('proposals.jpg',canvas)
       cv2.waitKey(0)
 
