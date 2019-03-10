@@ -1,0 +1,22 @@
+# model files
+*.pkl
+*.pth
+
+# backup files
+*.bak
+
+# libs
+*.so
+*.o
+
+# cache
+*.pyc
+
+# log files
+*.log
+
+# media files
+*.jpg
+*.png
+*.mp4
+*.avi
