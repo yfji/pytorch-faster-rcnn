@@ -5,10 +5,8 @@ Faster-RCNN using PyTorch
 ## Contents
 * [Train](#Train)
 * [Test](#Test)
+* [Result](#Test)
 
-
-## Train
-Training process is implemented in train_frcnn.py
 * train
   - You need to realize your own data_loader in roidb. deepdrive_data_loader.py is implemented for DeepDrive of AIChallenge dataset. You can also change it into VOC data loader or COCO data loader by overwriting get_minibatch()
   - More details in train_frcnn.py. The default number of epochs is 50, and the learning rate decays by 0.1 at epoch 30. You can change it in train()
