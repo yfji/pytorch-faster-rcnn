@@ -7,17 +7,19 @@ Faster-RCNN using PyTorch
 * [Test](#Test)
 * [Result](#Test)
 
-* train
-  - You need to realize your own data_loader in roidb. deepdrive_data_loader.py is implemented for DeepDrive of AIChallenge dataset. You can also change it into VOC data loader or COCO data loader by overwriting get_minibatch()
-  - More details in train_frcnn.py. The default number of epochs is 50, and the learning rate decays by 0.1 at epoch 30. You can change it in train()
-  - The first 100 images containing the foreground anchors are visualized iin 'vis_anchors'. This is a test for generating anchors.
+## Train
+* Training process is implemented in train_frcnn.py
+* You need to realize your own data_loader in roidb. deepdrive_data_loader.py is implemented for DeepDrive of AIChallenge dataset. You can also change it into VOC data loader or COCO data loader by overwriting get_minibatch()
+* More details in train_frcnn.py. The default number of epochs is 50, and the learning rate decays by 0.1 at epoch 30. You can change it in train()
+* The first 100 images containing the foreground anchors are visualized iin 'vis_anchors'. This is a test for generating anchors.
 
-* Test
-  - Put the testing image in to folder 'images' and modify inference.py
-  - You can visualize proposals output by RPN by uncommenting draw_proposals at line 181
+## Test
+* Test is implemented in inference.py
+* Put the testing image in to folder 'images' and modify inference.py
+* You can visualize proposals output by RPN by uncommenting draw_proposals at line 181
 
-* Results
-  - Detection
+## Results
+* Detection
 ![Load failed](https://github.com/yfji/pytorch-faster-rcnn/blob/master/detect.jpg?raw=true)
-  - Proposals
+* Proposals
 ![Load failed](https://github.com/yfji/pytorch-faster-rcnn/blob/master/proposals.jpg?raw=true)
