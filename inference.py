@@ -95,7 +95,7 @@ def im_detect(image, anchors, model):
             order=np.argsort(cls_probs)[::-1]
             bbox_order=cls_bbox_pred[order]
             
-            pick=nms_cuda(bbox_order, nms_thresh=0.5, xyxy=True)
+            pick=nms_cuda(bbox_order, nms_thresh=cfg.TEST.NMS_THRESH, xyxy=True)
 #            pick=pick[:600]
             
             bboxes=bbox_order[pick].reshape(-1,bbox_order.shape[1])
@@ -123,8 +123,8 @@ def draw_boxes(image, cls_bboxes, xyscale):
         y2=(y2/xyscale[1]).astype(np.int32)
 
         for j in range(bbox_with_score.shape[0]):
-            cv2.rectangle(image, (x1[j],y1[j]),(x2[j],y2[j]), COLORS[i%len(COLORS)], 2)
-            cv2.putText(image, '{}:{}'.format(CLASSES[i], scores[j]), (x1[j], y1[j]), cv2.FONT_HERSHEY_PLAIN, 0.9, COLORS[i%len(COLORS)], 1)
+            cv2.rectangle(image, (x1[j],y1[j]),(x2[j],y2[j]), COLORS[i%len(COLORS)], 3)
+            cv2.putText(image, '{}:{}'.format(CLASSES[i], scores[j]), (x1[j], y1[j]-10), cv2.FONT_HERSHEY_PLAIN, 1.0, COLORS[i%len(COLORS)], 1)
 
     
 def draw_proposals(image, proposals, xyscale):
@@ -149,7 +149,9 @@ if __name__=='__main__':
     cfg.TEST.RPN_POST_NMS_TOP_N=300
     cfg.NUM_CLASSES=len(CLASSES)
     cfg.TEST.IMS_PER_BATCH=1
-    cfg.TEST.NMS_THRESH=0.6
+    cfg.TEST.NMS_THRESH=0.5
+    cfg.TEST.RPN_NMS_THRESH=0.7
+#    cfg.TEST.RPN_POST_NMS_TOP_N=300
 
     K=len(ratios)*len(scales)
 
@@ -163,8 +165,8 @@ if __name__=='__main__':
     
     print(anchors.shape)
 
-    img_files=['img00337.jpg','img00832.jpg','img00995.jpg','img01879.jpg','road.jpg']
-#    img_files=['road.jpg']
+#    img_files=['img00337.jpg','img00832.jpg','img00995.jpg','img01879.jpg','road.jpg']
+    img_files=['road.jpg']
     model_path='./ckpt/model_660000.pkl'
     model=FasterRCNN(im_width, im_height, pretrained=False)
     model.load_weights(model_path=model_path)
@@ -177,9 +179,9 @@ if __name__=='__main__':
       
       cls_bboxes, xyscale, proposals=im_detect(image, anchors, model)
   
-      draw_boxes(canvas, cls_bboxes, xyscale)
-#      draw_proposals(canvas, proposals, xyscale)
-      cv2.imshow('detect', canvas)
-#      cv2.imwrite('proposals.jpg',canvas)
+#      draw_boxes(canvas, cls_bboxes, xyscale)
+      draw_proposals(canvas, proposals, xyscale)
+#      cv2.imwrite('detect.jpg', canvas)
+      cv2.imwrite('proposals.jpg',canvas)
       cv2.waitKey(0)
 

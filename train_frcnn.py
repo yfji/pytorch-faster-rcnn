@@ -314,5 +314,5 @@ class TrainEngine(object):
 if __name__=='__main__':
     pretrained='./ckpt/model_200000.pkl'
     engine=TrainEngine()
-    engine.train(pretrained_model=pretrained)
-#    engine.train()
+#    engine.train(pretrained_model=pretrained)
+    engine.train()

@@ -204,7 +204,7 @@ class FasterRCNN(nn.Module):
                 order=np.argsort(proposals[:,-1])[::-1]
                 proposals_order=proposals[order[:cfg[cfg.PHASE].RPN_PRE_NMS_TOP_N]]
 #                print('pre nms: {}'.format(proposals_order.shape[0]))
-                pick=nms_cuda(proposals_order, nms_thresh=0.7, xyxy=True)
+                pick=nms_cuda(proposals_order, nms_thresh=cfg[cfg.PHASE].RPN_NMS_THRESH, xyxy=True)
                 
                 if len(pick)==0:
                     print('No pick in proposal nms')

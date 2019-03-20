@@ -96,6 +96,7 @@ __C.TEST.MAX_SIZE = 1000
 __C.TEST.NMS = 0.3
 ## NMS threshold used on RPN proposals
 __C.TEST.RPN_NMS_THRESH = 0.8
+__C.TEST.NMS_THRESH=0.8
 ## Number of top scoring boxes to keep before apply NMS to RPN proposals
 __C.TEST.RPN_PRE_NMS_TOP_N = 1000
 ## Number of top scoring boxes to keep after applying NMS to RPN proposals
