@@ -1,5 +1,6 @@
 import threading
 import numpy as np
+from time import time
 
 class DataLoader(object):
     def __init__(self, data_loader, shuffle=True, batch_size=1, num_workers=1):
@@ -42,6 +43,8 @@ class DataLoader(object):
         roidbs=[]
         threads=[]
         
+#        tic=time()
+        
         num_threads=min(self.batch_size, self.num_workers)
         roidbs_th=[[] for _ in range(num_threads)]
 
@@ -75,4 +78,7 @@ class DataLoader(object):
             raise StopIteration
         else:
             self._prepare_roidb(roidbs)
+            
+#            toc=time()
+#            print('DataLoader costs {}s'.format(toc-tic))
             return roidbs

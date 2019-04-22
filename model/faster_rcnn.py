@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd.variable import Variable
+from time import time
 
 import sys
 sys.path.insert(0,'/home/yfji/Workspace/PyTorch/Faster-RCNN')
@@ -28,6 +29,8 @@ from core.config import cfg
 
 from nms.nms_wrapper import nms
 from roialign.roi_align.crop_and_resize import CropAndResizeFunction
+
+DEBUG=False
 
 def crop_and_resize(pool_size, feature_map, boxes, box_ind):
     if boxes.shape[1]==5:
@@ -171,18 +174,20 @@ class FasterRCNN(nn.Module):
         out_cls_np=out_cls_softmax.cpu().data.numpy()[:,1].reshape(-1,1)
         '''
         out_bbox_np=rpn_bbox.cpu().data.numpy().transpose(0,2,3,1).reshape(-1, 4)
-        
+        tic=time()
         if cfg.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
             out_bbox_np = out_bbox_np*cfg.RPN_BBOX_STD_DEV
 
         bbox_pred=bbox_transform_inv(anchors, out_bbox_np)
         self.clip_boxes(bbox_pred, self.bound)
-        
+        toc=time()
+        if DEBUG:
+            print('--bbox transform costs {}s'.format(toc-tic))
         bbox_pred_with_cls=np.hstack((bbox_pred, out_cls_np))
         proposals_batch=np.split(bbox_pred_with_cls, batch_size, axis=0)
         
         all_proposals=[]
-       
+        tic=time()
         for proposals in proposals_batch:
             '''
             x1,y1,x2,y2,_=np.split(proposals,5,axis=1)
@@ -203,6 +208,9 @@ class FasterRCNN(nn.Module):
             else:
                 proposals_nms=proposals
             all_proposals.append(proposals_nms)
+        toc=time()
+        if DEBUG:
+            print('--NMS costs {}s'.format(toc-tic))
         '''list of all proposals of each image sample'''
         return all_proposals
     
@@ -252,16 +260,21 @@ class FasterRCNN(nn.Module):
         self.anchors=anchors
          #NHWC-->NCHW
         images=Variable(torch.from_numpy(images.transpose(0, 3, 1, 2)).cuda())
-
+        tic=time()
         x=self.fpn_out(images)
         rpn_x = F.relu(self.shared_conv(self.padding(x)), inplace=True)    
         rpn_logits= self.rpn_cls_conv(rpn_x)
         rpn_logits = rpn_logits.view(self.batch_size, 2, self.K*self.out_height, self.out_width)
         rpn_bbox=self.rpn_bbox_conv(rpn_x)
-
+        toc=time()
+        if DEBUG:
+            print('Features cost {}s'.format(toc-tic))
+        tic=time()
         '''Fast RCNN start'''
         all_proposals=self.gen_proposals(rpn_logits, rpn_bbox, anchors, self.batch_size)
-        
+        toc=time()
+        if DEBUG:
+            print('Gen proposals cost {}s'.format(toc-tic))
         if cfg.PHASE=='TRAIN':
             proposals, proposal_cls_targets, proposal_bbox_targets, bbox_weights, labels=\
                 get_proposal_target(all_proposals, self.gt_boxes, self.gt_classes, self.batch_size)
@@ -271,10 +284,12 @@ class FasterRCNN(nn.Module):
                 num_proposals_per_image.append(len(label))
                 fg_inds=np.where(label>0)[0]
                 num_fgs+=len(fg_inds)
-            
+            tic=time()
             roi_features=self.get_rois(x, proposals, num_proposals_per_image)
             frcnn_logits, frcnn_probs, frcnn_bbox=self.fastRCNN(roi_features)
-
+            toc=time()
+            if DEBUG:
+                print('RoIAlign and FastRCNN cost {}s'.format(toc-tic))
             frcnn_bbox=torch.mul(frcnn_bbox, Variable(torch.from_numpy(bbox_weights).cuda(), requires_grad=False))
         else:
             num_proposals_per_image=[]

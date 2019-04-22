@@ -8,6 +8,9 @@ from core.config import cfg
 from model.faster_rcnn import FasterRCNN
 import rpn.anchor_target as T
 import rpn.util as U
+from time import time
+
+DEBUG=False
 
 def draw_anchors(image, boxes, anchors, fg_anchor_inds, bg_anchor_inds):
     '''
@@ -60,11 +63,15 @@ def train_epoch(model, data_loader, optimizer, logger, params):
             gt_boxes=model.gt_boxes
             anchors=model.anchors
             
+            tic=time()
             anchor_cls_targets, fg_anchor_inds, bg_anchor_inds, anchor_bbox_targets, bbox_weights=\
                 T.compute_rpn_targets(anchors, gt_boxes, params['out_size'], K=params['K'], bbox_overlaps=bbox_overlaps, batch_size=B)
             
             anchor_cls_targets=Variable(torch.from_numpy(anchor_cls_targets).long().cuda())
             anchor_bbox_targets=Variable(torch.from_numpy(anchor_bbox_targets).float().cuda())                   
+            toc=time()
+            if DEBUG:
+                print('Gen anchor targets cost {}s'.format(toc-tic))
 
             bbox_weights_var=Variable(torch.from_numpy(bbox_weights).cuda(), requires_grad=False)
             out_bbox=torch.mul(output_dict['rpn_bbox'], bbox_weights_var)
@@ -89,7 +96,8 @@ def train_epoch(model, data_loader, optimizer, logger, params):
             denominator_frcnn=num_fg_proposals if num_fg_proposals>0 else 1
             denominator_rpn+=1e-4
             denominator_frcnn+=1e-4
-
+            
+            tic=time()
             rpn_loss_cls=F.cross_entropy(output_dict['rpn_logits'], anchor_cls_targets, size_average=True, ignore_index=-100)
             rpn_loss_bbox=F.smooth_l1_loss(out_bbox, anchor_bbox_targets, size_average=False, reduce=False)
             
@@ -101,6 +109,10 @@ def train_epoch(model, data_loader, optimizer, logger, params):
             
             frcnn_loss_bbox=torch.div(torch.sum(frcnn_loss_bbox, dim=1), 4.0)
             frcnn_loss_bbox=torch.div(torch.sum(frcnn_loss_bbox), denominator_frcnn)  
+            
+            toc=time()
+            if DEBUG:
+                print('Compute loss costs {}s'.format(toc-tic))
             
             '''Do NOT multiply margin in RPN'''
 
@@ -121,6 +133,11 @@ def train_epoch(model, data_loader, optimizer, logger, params):
                 logger.error(msg)
                 assert 0
             
+            tic=time()
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
+            toc=time()
+            if DEBUG:
+                print('Backward costs {}s'.format(toc-tic))

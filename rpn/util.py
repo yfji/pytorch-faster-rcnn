@@ -12,19 +12,34 @@ def bbox_overlaps(b1, b2):
     area2=ws2*hs2
     bbox_overlap=np.zeros((b1.shape[0],b2.shape[0]))
     
-    for i, bbox in enumerate(b1):
-        x1=np.maximum(bbox[0], b2[:,0])
-        y1=np.maximum(bbox[1], b2[:,1])
-        x2=np.minimum(bbox[2], b2[:,2])
-        y2=np.minimum(bbox[3], b2[:,3])
+    if b1.shape[0]<=b2.shape[0]:
+        for i, bbox in enumerate(b1):
+            x1=np.maximum(bbox[0], b2[:,0])
+            y1=np.maximum(bbox[1], b2[:,1])
+            x2=np.minimum(bbox[2], b2[:,2])
+            y2=np.minimum(bbox[3], b2[:,3])
 
-        w=np.maximum(0, x2-x1+1)
-        h=np.maximum(0, y2-y1+1)
+            w=np.maximum(0, x2-x1+1)
+            h=np.maximum(0, y2-y1+1)
 
-        areas=w*h
-        iou=areas/(area1[i]+area2-areas)
+            areas=w*h
+            iou=areas/(area1[i]+area2-areas)
 
-        bbox_overlap[i,:]=iou[...]
+            bbox_overlap[i,:]=iou[...]
+    else:
+        for i, bbox in enumerate(b2):
+            x1=np.maximum(bbox[0], b1[:,0])
+            y1=np.maximum(bbox[1], b1[:,1])
+            x2=np.minimum(bbox[2], b1[:,2])
+            y2=np.minimum(bbox[3], b1[:,3])
+
+            w=np.maximum(0, x2-x1+1)
+            h=np.maximum(0, y2-y1+1)
+
+            areas=w*h
+            iou=areas/(area2[i]+area1-areas)
+            bbox_overlap[:,i]=iou[...]
+            
 
     return bbox_overlap
 

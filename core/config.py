@@ -43,9 +43,9 @@ __C.TRAIN.MAX_SIZE = 1000
 # Images to use per minibatch
 __C.TRAIN.IMS_PER_BATCH = 2
 # Minibatch size (number of regions of interest [ROIs])
-__C.TRAIN.BATCH_SIZE = 512
+__C.TRAIN.BATCH_SIZE = 256
 # Fraction of minibatch that is labeled foreground (i.e. class > 0)
-__C.TRAIN.FG_FRACTION = 0.25
+__C.TRAIN.FG_FRACTION = 0.333
 # Overlap threshold for a ROI to be considered foreground (if >= FG_THRESH)
 __C.TRAIN.FG_THRESH = 0.5
 # Overlap threshold for a ROI to be considered background (class = 0 if
@@ -67,13 +67,13 @@ __C.TRAIN.RPN_CLOBBER_POSITIVES = False
 # Max number of foreground examples
 __C.TRAIN.RPN_FG_FRACTION = 0.5
 # Total number of examples
-__C.TRAIN.RPN_BATCHSIZE = 256
+__C.TRAIN.RPN_BATCHSIZE = 512
 # NMS threshold used on RPN proposals
 __C.TRAIN.RPN_NMS_THRESH = 0.7
 # Number of top scoring boxes to keep before apply NMS to RPN proposals
-__C.TRAIN.RPN_PRE_NMS_TOP_N = 20000
+__C.TRAIN.RPN_PRE_NMS_TOP_N = 12000
 # Number of top scoring boxes to keep after applying NMS to RPN proposals
-__C.TRAIN.RPN_POST_NMS_TOP_N = 8000
+__C.TRAIN.RPN_POST_NMS_TOP_N = 6000
 # Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale)
 __C.TRAIN.RPN_MIN_SIZE = 16
 

@@ -96,7 +96,7 @@ class TrainEngine(object):
         
     def train(self, pretrained_model=None):
         coco_reader=COCODataReader(self.im_w, self.im_h, batch_size=self.batch_size)
-        coco_loader=DataLoader(coco_reader, shuffle=True, batch_size=self.batch_size, num_workers=self.batch_size)
+        coco_loader=DataLoader(coco_reader, shuffle=True, batch_size=self.batch_size, num_workers=2)
 
         self.model=FasterRCNN(self.im_w, self.im_h)
 
