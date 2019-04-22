@@ -21,15 +21,10 @@ __C.DATA_LOADER_METHOD='INTER_SEQ'
 
 __C.BASIC_SIZE=16
 __C.RATIOS=np.asarray([0.5,1,2])
-__C.SCALES=np.asarray([2,4,8,16])
-__C.DET_ROI_SIZE=14
-__C.TEMP_ROI_SIZE=5
+__C.SCALES=np.asarray([3,8,16,24])
 __C.FRCNN_ROI_SIZE=7
 
-__C.CHOOSE_ANCHOR=False
 __C.CHOOSE_PROPOSAL=True
-__C.ANCHOR_NUM=256
-__C.POS_ANCHOR_FRACTION=0.5
 __C.STRIDE=8
 
 __C.BBOX_NORMALIZE_TARGETS_PRECOMPUTED = True
@@ -48,9 +43,9 @@ __C.TRAIN.MAX_SIZE = 1000
 # Images to use per minibatch
 __C.TRAIN.IMS_PER_BATCH = 2
 # Minibatch size (number of regions of interest [ROIs])
-__C.TRAIN.BATCH_SIZE = 256
+__C.TRAIN.BATCH_SIZE = 512
 # Fraction of minibatch that is labeled foreground (i.e. class > 0)
-__C.TRAIN.FG_FRACTION = 0.5
+__C.TRAIN.FG_FRACTION = 0.25
 # Overlap threshold for a ROI to be considered foreground (if >= FG_THRESH)
 __C.TRAIN.FG_THRESH = 0.5
 # Overlap threshold for a ROI to be considered background (class = 0 if

@@ -35,13 +35,6 @@ def compute_rpn_targets(anchors, gt_boxes, out_size, K=9, bbox_overlaps=None, ba
         fg_anchor_ind=np.where(max_overlap>=cfg[cfg.PHASE].RPN_POSITIVE_THRESH)[0]
         bg_anchor_ind=np.where(max_overlap<cfg[cfg.PHASE].RPN_NEGATIVE_THRESH)[0]
 
-        if cfg.CHOOSE_ANCHOR:
-            fg_rois_this_image=min(fg_anchor_ind.size, int(cfg.POS_ANCHOR_FRACTION*cfg.ANCHOR_NUM))
-            bg_rois_this_image=min(bg_anchor_ind.size, cfg.ANCHOR_NUM-fg_rois_this_image)
-            if fg_rois_this_image>0:
-                fg_anchor_ind=np.random.choice(fg_anchor_ind, size=fg_rois_this_image, replace=False)
-            bg_anchor_ind=np.random.choice(bg_anchor_ind, size=bg_rois_this_image, replace=False)
-
         fg_anchor_inds.append(fg_anchor_ind)
         bg_anchor_inds.append(bg_anchor_ind)
 

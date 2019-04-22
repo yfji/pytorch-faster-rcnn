@@ -20,7 +20,7 @@ from collections import OrderedDict
 from model.vgg16 import Vgg16
 import model.resnet as resnet
 import model.fpn as fpn
-from model.fast_rcnn import FastRCNN
+from model.my_fast_rcnn import FastRCNN
 from rpn.util import bbox_transform_inv
 #from rpn.nms import nms
 from fast_rcnn.proposal_target import get_proposal_target
@@ -28,9 +28,6 @@ from core.config import cfg
 
 from nms.nms_wrapper import nms
 from roialign.roi_align.crop_and_resize import CropAndResizeFunction
-
-VGG_PRETRAINED_BN='/home/yfji/Pretrained/pytorch/vgg16_bn_features.pth'
-VGG_PRETRAINED='/home/yfji/Pretrained/pytorch/vgg16.pth'
 
 def crop_and_resize(pool_size, feature_map, boxes, box_ind):
     if boxes.shape[1]==5:
@@ -81,7 +78,7 @@ class FasterRCNN(nn.Module):
 
         self.fpn=fpn.FPN(self.features_out_ch)
         self.features=resnet.resnet50(pretrained=pretrained)
-        self.make_rpn()
+        self.make_net()
         
     def load_weights(self, model_path=None):
         print('loading model from {}'.format(model_path))
@@ -90,8 +87,6 @@ class FasterRCNN(nn.Module):
         if 'epoch' in keys:
             print('Restoring model from self-defined ckpt')
             im_w, im_h=pretrained_dict['im_w'], pretrained_dict['im_h']
-            self.im_width=im_w
-            self.im_height=im_h
             print('Using resolution: {}x{}'.format(im_w,im_h))
             pretrained_dict=pretrained_dict['model']
         self.load_state_dict(pretrained_dict)
@@ -140,14 +135,12 @@ class FasterRCNN(nn.Module):
         self.init_module(self.rpn_bbox_conv, gain=cfg.GAIN)
         self.init_module(self.fastRCNN, gain=cfg.GAIN)
 
-    def make_rpn(self):
+    def make_net(self):
         self.padding=SamePad2d(kernel_size=3, stride=1)
         self.shared_conv=nn.Conv2d(self.features_out_ch,self.rpn_out_ch, 3, 1, padding=0)
         self.rpn_cls_conv=nn.Conv2d(self.rpn_out_ch, 2*self.K, 1, 1, padding=0)
         self.rpn_bbox_conv=nn.Conv2d(self.rpn_out_ch, 4*self.K, 1, 1, padding=0)        
-#        self.fastRCNN=FastRCNN(input_dim=self.frcnn_roi_size**2*self.rpn_out_ch, num_classes=2)
         self.fastRCNN=FastRCNN(depth=self.features_out_ch, pool_size=self.frcnn_roi_size, num_classes=cfg.NUM_CLASSES)
-        self.rpn_cls_softmax=nn.Softmax2d()
         
     def get_params(self, lr=None):
         backbone_params=[]
@@ -155,10 +148,8 @@ class FasterRCNN(nn.Module):
         
         for k, value in self.named_parameters():
             if 'features' in k and value.requires_grad:
-#                print('Resnet')
                 backbone_params.append(value)
             elif value.requires_grad:
-#                print('Task')
                 task_params.append(value)
         params=[{'key':'backbone','params':backbone_params, 'lr':lr['backbone'], 'momentum':0.9},
                 {'key':'task','params':task_params, 'lr':lr['task'], 'momentum':0.9}]
@@ -171,7 +162,6 @@ class FasterRCNN(nn.Module):
         boxes[:,3] = np.maximum(0, np.minimum(bound[1], boxes[:,3]))
 
     def gen_proposals(self, rpn_logits, rpn_bbox, anchors, batch_size):
-#        out_cls_softmax=self.rpn_cls_softmax(rpn_logits)        
         out_cls_softmax=F.softmax(rpn_logits, dim=1)
         out_cls_np=out_cls_softmax.cpu().data.numpy()[:,1,:,:]
         out_cls_np=out_cls_np.reshape(batch_size, self.K, self.out_height, self.out_width).transpose(0,2,3,1).reshape(-1, 1)
@@ -203,14 +193,12 @@ class FasterRCNN(nn.Module):
             if cfg.NMS:
                 order=np.argsort(proposals[:,-1])[::-1]
                 proposals_order=proposals[order[:cfg[cfg.PHASE].RPN_PRE_NMS_TOP_N]]
-#                print('pre nms: {}'.format(proposals_order.shape[0]))
                 pick=nms_cuda(proposals_order, nms_thresh=cfg[cfg.PHASE].RPN_NMS_THRESH, xyxy=True)
                 
                 if len(pick)==0:
                     print('No pick in proposal nms')
                 if cfg[cfg.PHASE].RPN_POST_NMS_TOP_N>0 and len(pick)>cfg[cfg.PHASE].RPN_POST_NMS_TOP_N:
                     pick=pick[:cfg[cfg.PHASE].RPN_POST_NMS_TOP_N]
-#                print('post nms: {}'.format(len(pick)))
                 proposals_nms=proposals_order[pick]                
             else:
                 proposals_nms=proposals
@@ -241,48 +229,37 @@ class FasterRCNN(nn.Module):
         else:
             return p2
     
-    '''Single object'''
-#    def forward(self, temp_image, det_image, temp_box, search_box):
     def forward(self, roidbs):
         image_list=[]
         gt_boxes_list=[]
         anchor_list=[]
         gt_classes_list=[]
-        num_boxes=[]
         for db in roidbs:
             if db['gt_boxes'] is not None:
                 gt_boxes_list.append(db['gt_boxes'])
             if db['gt_classes'] is not None:
                 gt_classes_list.append(db['gt_classes'])
 
-            image_list.append(db['image'])
-            if db['gt_boxes'] is not None:
-                num_boxes.append(db['gt_boxes'].shape[0])
+            image_list.append(db['data'])
             anchor_list.append(db['anchors'])
          
         images = np.concatenate(image_list, axis=0)
         
-#        bound=(det_image.shape[2], det_image.shape[1])
         anchors=np.vstack(anchor_list)
         
         self.gt_boxes=gt_boxes_list
         self.gt_classes=gt_classes_list
-        self.num_boxes=num_boxes
         self.anchors=anchors
          #NHWC-->NCHW
         images=Variable(torch.from_numpy(images.transpose(0, 3, 1, 2)).cuda())
 
         x=self.fpn_out(images)
-        rpn_x = F.relu(self.shared_conv(self.padding(x)), inplace=True)     
-#        rpn_x=F.relu(self.shared_conv(x), inplace=True)
-        rpn_logits = self.rpn_cls_conv(rpn_x).view(self.batch_size, 2, self.K*self.out_height, self.out_width)
+        rpn_x = F.relu(self.shared_conv(self.padding(x)), inplace=True)    
+        rpn_logits= self.rpn_cls_conv(rpn_x)
+        rpn_logits = rpn_logits.view(self.batch_size, 2, self.K*self.out_height, self.out_width)
         rpn_bbox=self.rpn_bbox_conv(rpn_x)
 
-#        print(rpn_logits.shape)
-#        print(rpn_bbox.shape)
-
         '''Fast RCNN start'''
-        
         all_proposals=self.gen_proposals(rpn_logits, rpn_bbox, anchors, self.batch_size)
         
         if cfg.PHASE=='TRAIN':
@@ -297,6 +274,7 @@ class FasterRCNN(nn.Module):
             
             roi_features=self.get_rois(x, proposals, num_proposals_per_image)
             frcnn_logits, frcnn_probs, frcnn_bbox=self.fastRCNN(roi_features)
+
             frcnn_bbox=torch.mul(frcnn_bbox, Variable(torch.from_numpy(bbox_weights).cuda(), requires_grad=False))
         else:
             num_proposals_per_image=[]

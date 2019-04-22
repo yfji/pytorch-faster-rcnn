@@ -103,7 +103,7 @@ def im_detect(image, anchors, model):
             print('Class {} has {} instances!'.format(CLASSES[i], bboxes.shape[0]))
             cls_bboxes.append(bboxes)
 
-    print(len(proposals))
+#    print(len(proposals))
     return cls_bboxes, (xscale, yscale), proposals
 
 def draw_boxes(image, cls_bboxes, xyscale):
@@ -123,8 +123,8 @@ def draw_boxes(image, cls_bboxes, xyscale):
         y2=(y2/xyscale[1]).astype(np.int32)
 
         for j in range(bbox_with_score.shape[0]):
-            cv2.rectangle(image, (x1[j],y1[j]),(x2[j],y2[j]), COLORS[i%len(COLORS)], 3)
-            cv2.putText(image, '{}:{}'.format(CLASSES[i], scores[j]), (x1[j], y1[j]-10), cv2.FONT_HERSHEY_PLAIN, 1.0, COLORS[i%len(COLORS)], 1)
+            cv2.rectangle(image, (x1[j],y1[j]),(x2[j],y2[j]), COLORS[i%len(COLORS)], 5)
+            cv2.putText(image, '{}:{}'.format(CLASSES[i], scores[j]), (x1[j], y1[j]-10), cv2.FONT_HERSHEY_PLAIN, 1.0, COLORS[i%len(COLORS)], 2)
 
     
 def draw_proposals(image, proposals, xyscale):
@@ -133,7 +133,7 @@ def draw_proposals(image, proposals, xyscale):
     boxes[:,[1,3]]/=xyscale[1]
     for box in boxes:
         box=box.astype(np.int32)
-        cv2.rectangle(image, (box[0],box[1]),(box[2],box[3]), (0,255,0), 1)
+        cv2.rectangle(image, (box[0],box[1]),(box[2],box[3]), (0,255,0), 2)
         
 if __name__=='__main__':
     im_width=640
@@ -146,7 +146,7 @@ if __name__=='__main__':
     
     cfg.STRIDE=stride
     cfg.PHASE='TEST'
-    cfg.TEST.RPN_POST_NMS_TOP_N=300
+    cfg.TEST.RPN_POST_NMS_TOP_N=100
     cfg.NUM_CLASSES=len(CLASSES)
     cfg.TEST.IMS_PER_BATCH=1
     cfg.TEST.NMS_THRESH=0.5
@@ -165,23 +165,25 @@ if __name__=='__main__':
     
     print(anchors.shape)
 
-#    img_files=['img00337.jpg','img00832.jpg','img00995.jpg','img01879.jpg','road.jpg']
-    img_files=['road.jpg']
+    img_files=['img00337.jpg','img00832.jpg','img00995.jpg','img01879.jpg','road.jpg']
+#    img_files=['road.jpg']
     model_path='./ckpt/model_660000.pkl'
     model=FasterRCNN(im_width, im_height, pretrained=False)
     model.load_weights(model_path=model_path)
     model.cuda()
 
     for f in img_files:
-      img_path='./images/{}'.format(f)
-      image=cv2.imread(img_path)
-      canvas=image.copy()
-      
-      cls_bboxes, xyscale, proposals=im_detect(image, anchors, model)
-  
-#      draw_boxes(canvas, cls_bboxes, xyscale)
-      draw_proposals(canvas, proposals, xyscale)
-#      cv2.imwrite('detect.jpg', canvas)
-      cv2.imwrite('proposals.jpg',canvas)
-      cv2.waitKey(0)
+        img_name=f[:f.rfind('.')]
+        img_path='./images/{}'.format(f)
+        image=cv2.imread(img_path)
+        canvas_det=image.copy()
+        canvas_prpsl=image.copy()
+
+        cls_bboxes, xyscale, proposals=im_detect(image, anchors, model)
+
+        draw_boxes(canvas_det, cls_bboxes, xyscale)
+        draw_proposals(canvas_prpsl, proposals, xyscale)
+        cv2.imwrite('{}_det.jpg'.format(img_name), canvas_det)
+        cv2.imwrite('{}_proposals.jpg'.format(img_name),canvas_prpsl)
+#        cv2.waitKey(0)
 

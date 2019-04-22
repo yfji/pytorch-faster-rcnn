@@ -24,7 +24,7 @@ def get_proposal_target(proposal_batch, gt_boxes, gt_classes, batch_size):
         gt_boxes_this_image=gt_boxes[i]
         gt_classes_this_image=gt_classes[i]
 
-        bbox_overlaps=bbox_overlaps_per_image(proposals_this_image, gt_boxes_this_image, branch='frcnn')
+        bbox_overlaps=bbox_overlaps_per_image(proposals_this_image, gt_boxes_this_image)
         argmax_overlaps=np.argmax(bbox_overlaps, axis=1)      
 
         max_overlaps=np.max(bbox_overlaps, axis=1)
@@ -67,7 +67,6 @@ def get_proposal_target(proposal_batch, gt_boxes, gt_classes, batch_size):
         targets=bbox_transform(proposals_keep, max_overlap_boxes)
         if cfg.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
             # Optionally normalize targets by a precomputed mean and stdev
-            #targets = (targets - cfg.BBOX_NORMALIZE_MEANS) / cfg.BBOX_NORMALIZE_STDS
             targets = targets/cfg.BBOX_STD_DEV
         
         proposal_cls_target=np.zeros(len(proposals_keep), dtype=np.int32) 
